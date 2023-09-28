@@ -1,0 +1,29 @@
+{
+    "dut_mcus": [
+        {
+            "id": 0,
+            "family": "nrf52",
+            "flasher": {
+                "type": "jlink",
+                "id": "683508544"
+            },
+            "console": {
+                "port": "/dev/ttyACM0"
+            }
+        }
+    ],
+    "power_supply": {
+        "source": "PPK2",
+        "output_voltage": 3.300
+    },
+    "power_measurement": {
+        "instrument": "PPK2"
+    },
+    "actions": [
+        {
+            "program_mcu": 0,
+            "image": "tmp/image.hex"
+        }
+    ]
+
+}
