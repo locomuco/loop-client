@@ -1,3 +1,3 @@
 # loop-client
 
-# TODO: point to gihub pages for shpinx documentation
+Docs can be found at https://locomuco.github.io/loop-client/
