@@ -29,8 +29,7 @@ jobs:
         run: pip install sphinx sphinx_rtd_theme
       - name: Run a script
         run: make html
-    steps:
-      - id: deployment
+      - name: deployment
         uses: sphinx-notes/pages@v3
         with:
           publish: false
