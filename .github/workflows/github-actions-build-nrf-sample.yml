@@ -32,3 +32,32 @@ jobs:
         name: nrf52840_blinky-latest.tar.gz
         path: /workdir/zephyr/nrf52840_blinky-latest.tar.gz
 
+  hw_flash_and_test:
+    runs-on: [self-hosted, nrf52840dk]
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: blinky-test
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          path: blinky-test
+
+      - name: Download build tarball
+        uses: actions/download-artifact@v3
+        with:
+          name: nrf52840_blinky-latest.tar.gz
+
+      - name: Untar
+        run: tar xvf nrf52840_blinky-latest.tar.gz
+
+      - name: Flash and Verify Test Results
+        run: |
+          nrfjprog --eraseall -f NRF52
+          nrfjprog --program build/zephyr/zephyr.hex --verify -f NRF52
+          nrfjprog --pinresetenable -f NRF52
+          nrfjprog --pinreset -f NRF52
+          sleep 3
