@@ -1,7 +1,7 @@
 name: build-nrf-sample
 
-on: 
-  - pull_request
+on:
+  workflow_dispatch:
 
 jobs:  
   container:
@@ -16,20 +16,19 @@ jobs:
         testjob: here is value
 
     steps:
-    - name: Sample Build
+    - name: Blinky Sample Build
       run: |
         cd /workdir/zephyr
         nrfutil toolchain-manager launch /bin/bash -- -c 'west build -b nrf52840dk_nrf52840 samples/basic/blinky'
 
-    - name: Archive firmware
+    - name: Create build tarball
+      run: |
+        cd /workdir/zephyr
+        tar czf nrf52840_blinky-latest.tar.gz build/zephyr/zephyr.hex
+
+    - name: Upload tarball
       uses: actions/upload-artifact@v3
       with:
-        name:
-          nrf52840_blinky-${{ github.sha }}
-        path: |
-          /workdir/zephyr/build/zephyr/zephyr.elf
-          /workdir/zephyr/build/zephyr/zephyr.hex
-          /workdir/zephyr/build/zephyr/zephyr.dts
-          /workdir/zephyr/build/zephyr/.config
-
+        name: nrf52840_blinky-latest.tar.gz
+        path: /workdir/zephyr/build/zephyr/nrf52840_blinky-latest.tar.gz
 
