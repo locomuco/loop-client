@@ -9,8 +9,8 @@ jobs:
     container:
       image: 'ghcr.io/locomuco/loop-client-nrf_connectsdk:latest'
       credentials:
-         username: ${{ github.ref }}
-         password: ${{ secrets.GITHUB_TOKEN }}
+        username: ${{ github.ref }}
+        password: ${{ secrets.GITHUB_TOKEN }}
       env: 
         actor: ${{ github.actor }}
         testjob: here is value
@@ -23,8 +23,8 @@ jobs:
 
     - name: Create build tarball
       run: |
-        cd /workdir/zephyr
-        tar czf nrf52840_blinky-latest.tar.gz build/zephyr/zephyr.hex
+        cd /workdir/zephyr/build/zephyr/
+        tar czf nrf52840_blinky-latest.tar.gz zephyr.hex
 
     - name: Upload tarball
       uses: actions/upload-artifact@v3
@@ -39,14 +39,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: blinky-test
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        with:
-          path: blinky-test
-
       - name: Download build tarball
         uses: actions/download-artifact@v3
         with:
@@ -58,7 +51,7 @@ jobs:
       - name: Flash and Verify Test Results
         run: |
           nrfjprog --eraseall -f NRF52
-          nrfjprog --program build/zephyr/zephyr.hex --verify -f NRF52
+          nrfjprog --program zephyr.hex --verify -f NRF52
           nrfjprog --pinresetenable -f NRF52
           nrfjprog --pinreset -f NRF52
           sleep 3
