@@ -30,7 +30,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: nrf52840_blinky-latest.tar.gz
-        path: /workdir/zephyr/nrf52840_blinky-latest.tar.gz
+        path: /workdir/zephyr/build/zephyr/nrf52840_blinky-latest.tar.gz
 
   hw_flash_and_test:
     needs: build_nrf_sample
