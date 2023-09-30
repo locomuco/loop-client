@@ -3,8 +3,8 @@ name: build-nrf-sample
 on:
   workflow_dispatch:
 
-jobs:  
-  container:
+jobs:
+  build_nrf_sample:
     runs-on: ubuntu-latest
     container:
       image: 'ghcr.io/locomuco/loop-client-nrf_connectsdk:latest'
@@ -33,6 +33,7 @@ jobs:
         path: /workdir/zephyr/nrf52840_blinky-latest.tar.gz
 
   hw_flash_and_test:
+    needs: build_nrf_sample
     runs-on: [self-hosted, nrf52840dk]
 
     defaults:
