@@ -23,3 +23,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = load_config(args.config)
     dut = Dut(config)
+
+    for action in config["actions"]:
+        dut.run_action(action)
+

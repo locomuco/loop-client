@@ -1,0 +1,3 @@
+[submodule "firmware/zephyr/loop-zephyr"]
+	path = firmware/zephyr/loop-zephyr
+	url = https://github.com/locomuco/loop-zephyr.git

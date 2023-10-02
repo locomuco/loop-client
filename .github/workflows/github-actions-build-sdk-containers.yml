@@ -1,0 +1,21 @@
+name: Build and publish firmware sdk docker images to ghcr.io
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker_publish:
+    runs-on: "ubuntu-20.04"
+    strategy:
+      matrix:
+        sdk: ["esp-idf", "sdk-nrf"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and publish a Docker image for ${{ github.repository }}
+        uses: macbre/push-to-ghcr@master
+        with:
+          image_name: ${{ github.repository }}-${{ matrix.sdk }}
+          github_token: ${{ secrets.GHCR_TOKEN }}
+          dockerfile: "${{ github.workspace }}/firmware/${{ matrix.sdk }}/docker/Dockerfile"
+          context: "${{ github.workspace }}/firmware/${{ matrix.sdk }}/docker"
