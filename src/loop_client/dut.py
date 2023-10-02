@@ -7,8 +7,8 @@ class Dut(object):
         self.mcus = config["dut_mcus"]
         pass
 
-    def flash(self, fw: str) -> None:
-        """Flash the DUT with the given firmware."""
+    def run_action(self, action: str):
+        print("Running action: {}".format(action))
         pass
 
 
