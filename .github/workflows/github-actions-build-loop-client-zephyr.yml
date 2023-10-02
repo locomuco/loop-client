@@ -1,4 +1,4 @@
-name: build-nrf-sample
+name: Build and Test NRF loop client sample
 
 on:
   workflow_dispatch:
@@ -7,30 +7,35 @@ jobs:
   build_nrf_sample:
     runs-on: ubuntu-latest
     container:
-      image: 'ghcr.io/locomuco/loop-client-nrf_connectsdk:latest'
+      image: 'ghcr.io/locomuco/loop-client-sdk-nrf:latest'
       credentials:
         username: ${{ github.ref }}
         password: ${{ secrets.GITHUB_TOKEN }}
-      env: 
+      env:
         actor: ${{ github.actor }}
         testjob: here is value
 
     steps:
-    - name: Blinky Sample Build
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+
+    - name: Build Zephyr Loop Client
       run: |
-        cd /workdir/zephyr
-        nrfutil toolchain-manager launch /bin/bash -- -c 'west build -b nrf52840dk_nrf52840 samples/basic/blinky'
+        cd ${{ github.workspace }}/loop-client/firmware/zephyr/loop-zephyr
+        nrfutil toolchain-manager launch /bin/bash -- -c 'west build -b nrf52840dk_nrf52840'
 
     - name: Create build tarball
       run: |
-        cd /workdir/zephyr/build/zephyr/
-        tar czf nrf52840_blinky-latest.tar.gz zephyr.hex
+        cd ${{ github.workspace }}/loop-client/firmware/zephyr/loop-zephyr
+        tar czf loop-zephyr-latest.tar.gz zephyr.hex
 
     - name: Upload tarball
       uses: actions/upload-artifact@v3
       with:
-        name: nrf52840_blinky-latest.tar.gz
-        path: /workdir/zephyr/build/zephyr/nrf52840_blinky-latest.tar.gz
+        name: loop-zephyr-latest.tar.gz
+        path: cd ${{ github.workspace }}/loop-client/firmware/zephyr/loop-zephyr/loop-zephyr-latest.tar.gz
 
   hw_flash_and_test:
     needs: build_nrf_sample
@@ -40,13 +45,18 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
       - name: Download build tarball
         uses: actions/download-artifact@v3
         with:
-          name: nrf52840_blinky-latest.tar.gz
+          name: loop-zephyr-latest.tar.gz
 
       - name: Untar
-        run: tar xvf nrf52840_blinky-latest.tar.gz
+        run: tar xvf loop-zephyr-latest.tar.gz
 
       - name: Flash and Verify Test Results
         run: |

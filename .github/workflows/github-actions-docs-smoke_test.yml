@@ -1,4 +1,4 @@
-name: "Pull Request Docs Check"
+name: "Docs Smoke Test"
 on: 
 - pull_request
 

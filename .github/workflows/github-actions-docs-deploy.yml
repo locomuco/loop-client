@@ -1,4 +1,4 @@
-name: Deploy Sphinx documentation to Pages
+name: Deploy Docs to https://locomuco.github.io/loop-client/
 
 on:
   push:
