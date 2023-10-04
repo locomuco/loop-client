@@ -1,86 +1,49 @@
+# derived from https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/installation/installing.html
 FROM ubuntu:22.04 as base
-WORKDIR /workdir
-
-ARG sdk_nrf_branch=v2.4-branch
-ARG toolchain_version=v2.4.1
-ARG sdk_nrf_commit
-ARG NORDIC_COMMAND_LINE_TOOLS_VERSION="10-23-0/nrf-command-line-tools-10.23.0"
-ARG arch=amd64
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV NCS_PATH=/opt/ncs
 
-RUN <<EOT
-    apt-get -y update
-    apt-get -y upgrade
-    apt-get -y install wget unzip
-EOT
+# install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git cmake ninja-build gperf ccache dfu-util device-tree-compiler wget \
+    python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
+    make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1 unzip
 
-# Install toolchain
-# Make nrfutil install in a shared location, because when used with GitHub
-# Actions, the image will be launched with the home dir mounted from the local
-# checkout.
-ENV NRFUTIL_HOME=/usr/local/share/nrfutil
-RUN <<EOT
-    wget -q https://developer.nordicsemi.com/.pc-tools/nrfutil/x64-linux/nrfutil
-    mv nrfutil /usr/local/bin
-    chmod +x /usr/local/bin/nrfutil
-    nrfutil install toolchain-manager
-    nrfutil install toolchain-manager search
-    nrfutil toolchain-manager install --ncs-version ${toolchain_version}
-    nrfutil toolchain-manager list
-EOT
+# install CMake
+RUN cd ${HOME} && \
+    wget https://apt.kitware.com/kitware-archive.sh && \
+    bash kitware-archive.sh
 
-#
-# ClangFormat
-#
-RUN <<EOT
-    apt-get -y install clang-format
-    wget -qO- https://raw.githubusercontent.com/nrfconnect/sdk-nrf/${sdk_nrf_branch}/.clang-format > /workdir/.clang-format
-EOT
+# install GN tool
+RUN mkdir ${HOME}/gn && cd ${HOME}/gn && \
+    wget -O gn.zip https://chrome-infra-packages.appspot.com/dl/gn/gn/linux-amd64/+/latest && \
+    unzip gn.zip && \
+    rm gn.zip && \
+    export PATH=${HOME}/gn:"$PATH"
 
-# Nordic command line tools
-# Releases: https://www.nordicsemi.com/Products/Development-tools/nrf-command-line-tools/download
-RUN <<EOT
-    NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x
-    echo "Host architecture: $arch"
-    case $arch in
-        "amd64")
-            NCLT_URL="${NCLT_BASE}/${NORDIC_COMMAND_LINE_TOOLS_VERSION}_linux-amd64.tar.gz"
-            ;;
-        "arm64")
-            NCLT_URL="${NCLT_BASE}/${NORDIC_COMMAND_LINE_TOOLS_VERSION}_linux-arm64.tar.gz"
-            ;;
-    esac
-    echo "NCLT_URL=${NCLT_URL}"
-    if [ ! -z "$NCLT_URL" ]; then
-        mkdir tmp && cd tmp
-        wget -qO - "${NCLT_URL}" | tar --no-same-owner -xz
-        # Install included JLink
-        mkdir /opt/SEGGER
-        tar xzf JLink_*.tgz -C /opt/SEGGER
-        mv /opt/SEGGER/JLink* /opt/SEGGER/JLink
-        # Install nrf-command-line-tools
-        cp -r ./nrf-command-line-tools /opt
-        ln -s /opt/nrf-command-line-tools/bin/nrfjprog /usr/local/bin/nrfjprog
-        ln -s /opt/nrf-command-line-tools/bin/mergehex /usr/local/bin/mergehex
-        cd .. && rm -rf tmp ;
-    else
-        echo "Skipping nRF Command Line Tools (not available for $arch)" ;
-    fi
-EOT
+# install West
+RUN pip3 install west && \
+    export PATH=~/.local/bin:"$PATH"
 
-# Prepare image with a ready to use build environment
-SHELL ["nrfutil","toolchain-manager","launch","/bin/bash","--","-c"]
-RUN <<EOT
-    west init -m https://github.com/nrfconnect/sdk-nrf --mr ${sdk_nrf_branch} .
-    if [[ $sdk_nrf_commit =~ "^[a-fA-F0-9]{32}$" ]]; then
-        git checkout ${sdk_nrf_commit};
-    fi
-    west update --narrow -o=--depth=1
-EOT
+# checkout NCS
+RUN mkdir $NCS_PATH && cd $NCS_PATH && \
+    west init -m https://github.com/nrfconnect/sdk-nrf --mr v2.4.2 && \
+    west update && \
+    west zephyr-export
 
-# Launch into build environment with the passed arguments
-# Currently this is not supported in GitHub Actions
-# See https://github.com/actions/runner/issues/1964
-ENTRYPOINT [ "nrfutil", "toolchain-manager", "launch", "/bin/bash", "--", "/root/entry.sh" ]
-COPY ./entry.sh /root/entry.sh
+# install NCS requirements
+RUN pip install -r $NCS_PATH/zephyr/scripts/requirements.txt && \
+    pip install -r $NCS_PATH/nrf/scripts/requirements.txt && \
+    pip install -r $NCS_PATH/bootloader/mcuboot/scripts/requirements.txt
+
+# install toolchain
+RUN cd /opt && \
+    wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.1/zephyr-sdk-0.16.1_linux-x86_64.tar.xz && \
+    tar xvf zephyr-sdk-0.16.1_linux-x86_64.tar.xz && \
+    cd zephyr-sdk-0.16.1 && \
+    ./setup.sh -t all -h -c
+
+COPY entrypoint.sh ~/entrypoint.sh
+ENTRYPOINT [ "~/entrypoint.sh" ]
+CMD [ "/bin/bash" ]

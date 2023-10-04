@@ -7,13 +7,7 @@ jobs:
   build_nrf_sample:
     runs-on: ubuntu-latest
     container:
-      image: 'ghcr.io/locomuco/loop-client-sdk-nrf:latest'
-      credentials:
-        username: ${{ github.ref }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-      env:
-        actor: ${{ github.actor }}
-        testjob: here is value
+      image: ghcr.io/locomuco/loop-client-sdk-nrf:latest
 
     steps:
     - name: Checkout repository
@@ -21,21 +15,25 @@ jobs:
       with:
         submodules: 'true'
 
-    - name: Build Zephyr Loop Client
+    - name: Build loop client
+      shell: bash
       run: |
-        cd ${{ github.workspace }}/loop-client/firmware/zephyr/loop-zephyr
-        nrfutil toolchain-manager launch /bin/bash -- -c 'west build -b nrf52840dk_nrf52840'
+        source /opt/ncs/zephyr/zephyr-env.sh
+        cd $GITHUB_WORKSPACE/firmware/zephyr/loop-zephyr
+        west build -b nrf52840dk_nrf52840 . -p
 
     - name: Create build tarball
       run: |
-        cd ${{ github.workspace }}/loop-client/firmware/zephyr/loop-zephyr
+        cd $GITHUB_WORKSPACE/firmware/zephyr/loop-zephyr/build/zephyr
         tar czf loop-zephyr-latest.tar.gz zephyr.hex
+        pwd
+        ls
 
     - name: Upload tarball
       uses: actions/upload-artifact@v3
       with:
         name: loop-zephyr-latest.tar.gz
-        path: cd ${{ github.workspace }}/loop-client/firmware/zephyr/loop-zephyr/loop-zephyr-latest.tar.gz
+        path: ${{ github.workspace }}/firmware/zephyr/loop-zephyr/build/zephyr/loop-zephyr-latest.tar.gz
 
   hw_flash_and_test:
     needs: build_nrf_sample
